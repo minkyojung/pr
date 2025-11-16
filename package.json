@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "test:etl": "tsx scripts/test-github-etl.ts"
+    "test:etl": "tsx scripts/test-github-etl.ts",
+    "test:brag": "tsx scripts/test-brag-generator.ts"
   },
   "keywords": [
     "brag-doc",
@@ -20,6 +21,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0",
     "@octokit/rest": "^22.0.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
