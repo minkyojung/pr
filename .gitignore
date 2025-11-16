@@ -1,3 +1,23 @@
 ../*
 !../pr/
 .DS_Store
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+
+# local env files
+.env*.local
+.env
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# drizzle
+drizzle/
