@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users, accounts } from "@/lib/db/schema";
+import { users, accounts, workEvents } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { GitHubETL } from "@/lib/etl/github";
 import { TemplateBragDocGenerator } from "@/lib/brag/template-generator";
@@ -41,7 +41,7 @@ export async function POST() {
     }
 
     // 4. Run Fast ETL (last 6 months, max 500 events)
-    const etl = new GitHubETL(account.access_token);
+    const etl = new GitHubETL(account.access_token, user.githubUsername);
 
     const events = await etl.collect({
       username: user.githubUsername,
@@ -51,6 +51,36 @@ export async function POST() {
     });
 
     console.log(`[Onboarding] Collected ${events.length} events for ${user.githubUsername}`);
+
+    // 4.5. Save events to database
+    if (events.length > 0) {
+      console.log(`[Onboarding] Saving ${events.length} events to database...`);
+
+      // Save in batches of 50 to avoid overwhelming the database
+      const batchSize = 50;
+      for (let i = 0; i < events.length; i += batchSize) {
+        const batch = events.slice(i, i + batchSize);
+        await db.insert(workEvents).values(
+          batch.map((event) => ({
+            userId: session.user.id,
+            type: event.type,
+            source: event.source,
+            title: event.title,
+            description: event.description,
+            summary: event.summary,
+            project: event.project,
+            tags: event.tags,
+            links: event.links,
+            impact: event.impact,
+            category: event.category,
+            rawData: event.rawData,
+            eventTimestamp: event.eventTimestamp,
+          }))
+        );
+      }
+
+      console.log(`[Onboarding] Successfully saved ${events.length} events!`);
+    }
 
     // 5. Generate Weekly Brags (last 8 weeks)
     const weeklyGenerator = new WeeklyBragDocGenerator();
