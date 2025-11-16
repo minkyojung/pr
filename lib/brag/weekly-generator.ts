@@ -100,7 +100,7 @@ export class WeeklyBragDocGenerator {
       highImpactEvents: [] as any[],
       topProjects: [] as { project: string; count: number; categories: string[] }[],
       dailyAverage: 0,
-      peakDay: { day: string; count: number },
+      peakDay: { day: '', count: 0 },
     };
 
     // Count by type, category, impact, project, day
