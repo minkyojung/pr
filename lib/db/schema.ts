@@ -118,7 +118,11 @@ export const achievements = pgTable("achievements", {
 export const dailyBrags = pgTable("daily_brags", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  date: timestamp("date").notNull(), // 해당 날짜 (YYYY-MM-DD)
+  date: timestamp("date").notNull(), // 해당 날짜 (YYYY-MM-DD) 또는 주의 시작일 (Monday)
+
+  // Period type
+  periodType: varchar("period_type", { length: 20 }).default('daily'), // 'daily' or 'weekly'
+  periodEnd: timestamp("period_end"), // For weekly brags, store the end date (Sunday)
 
   // 자동 생성된 요약
   autoSummary: text("auto_summary"), // LLM이 생성한 전체 요약

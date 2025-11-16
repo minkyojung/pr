@@ -5,7 +5,8 @@ import { users, accounts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { GitHubETL } from "@/lib/etl/github";
 import { TemplateBragDocGenerator } from "@/lib/brag/template-generator";
-import { subMonths } from "date-fns";
+import { WeeklyBragDocGenerator } from "@/lib/brag/weekly-generator";
+import { subMonths, subDays } from "date-fns";
 
 export async function POST() {
   try {
@@ -51,22 +52,29 @@ export async function POST() {
 
     console.log(`[Onboarding] Collected ${events.length} events for ${user.githubUsername}`);
 
-    // 5. Generate initial brag doc for today
-    const generator = new TemplateBragDocGenerator();
+    // 5. Generate Weekly Brags (last 8 weeks)
+    const weeklyGenerator = new WeeklyBragDocGenerator();
+    await weeklyGenerator.generateMultipleWeeks(session.user.id, 8);
 
-    // Get events from today or recent days
-    const recentEvents = events.filter((e) => {
-      const daysDiff = Math.floor(
-        (new Date().getTime() - e.eventTimestamp.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      return daysDiff <= 7; // Last 7 days
-    });
+    // 6. Generate Daily Brags (last 7 days)
+    const dailyGenerator = new TemplateBragDocGenerator();
 
-    if (recentEvents.length > 0) {
-      await generator.generateDailyBrag(session.user.id, new Date());
+    // Generate brags for each of the last 7 days
+    for (let i = 0; i < 7; i++) {
+      const targetDate = subDays(new Date(), i);
+
+      // Check if there are events for this day
+      const dayEvents = events.filter((e) => {
+        const eventDate = new Date(e.eventTimestamp);
+        return eventDate.toDateString() === targetDate.toDateString();
+      });
+
+      if (dayEvents.length > 0) {
+        await dailyGenerator.generateDailyBrag(session.user.id, targetDate);
+      }
     }
 
-    // 6. Return summary
+    // 7. Return summary
     return NextResponse.json({
       success: true,
       summary: {
@@ -74,7 +82,8 @@ export async function POST() {
         commits: events.filter((e) => e.type === "commit").length,
         prs: events.filter((e) => e.type === "pr").length,
         issues: events.filter((e) => e.type === "issue").length,
-        recentEvents: recentEvents.length,
+        weeklyBragsGenerated: 8,
+        dailyBragsGenerated: 7,
       },
     });
   } catch (error) {

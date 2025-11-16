@@ -21,6 +21,8 @@ interface Achievement {
 interface DailyBrag {
   id: string;
   date: Date;
+  periodType: string;
+  periodEnd: Date | null;
   autoSummary: string | null;
   userEditedSummary: string | null;
   status: string;
@@ -29,12 +31,23 @@ interface DailyBrag {
   achievements: Achievement[];
 }
 
+interface TotalStats {
+  totalEvents: number;
+  commits: number;
+  prs: number;
+  issues: number;
+  reviews: number;
+  features: number;
+  bugs: number;
+}
+
 interface DashboardClientProps {
   initialBrags: DailyBrag[];
   userId: string;
   userName: string;
   userEmail: string;
   firstTime: boolean;
+  totalStats: TotalStats;
 }
 
 export function DashboardClient({
@@ -43,6 +56,7 @@ export function DashboardClient({
   userName,
   userEmail,
   firstTime,
+  totalStats,
 }: DashboardClientProps) {
   const router = useRouter();
   const [brags, setBrags] = useState<DailyBrag[]>(initialBrags);
@@ -115,6 +129,10 @@ export function DashboardClient({
   const avgImpact = brags.length > 0
     ? Math.round(brags.reduce((sum, brag) => sum + brag.impactScore, 0) / brags.length)
     : 0;
+
+  // Separate weekly and daily brags
+  const weeklyBrags = brags.filter((brag) => brag.periodType === "weekly");
+  const dailyBrags = brags.filter((brag) => brag.periodType === "daily");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
@@ -200,6 +218,48 @@ export function DashboardClient({
           </div>
         </div>
 
+        {/* Hero Stats Section */}
+        <Card className="mb-8 bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-950/20 dark:to-violet-950/20 border-2">
+          <CardHeader>
+            <CardTitle className="text-2xl">Your Total Impact</CardTitle>
+            <CardDescription className="text-base">
+              All-time stats from your GitHub activity
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+              <div className="text-center p-4 bg-background/50 rounded-lg">
+                <div className="text-3xl font-bold text-blue-600">{totalStats.totalEvents}</div>
+                <div className="text-sm text-muted-foreground mt-1">Total Events</div>
+              </div>
+              <div className="text-center p-4 bg-background/50 rounded-lg">
+                <div className="text-3xl font-bold text-violet-600">{totalStats.commits}</div>
+                <div className="text-sm text-muted-foreground mt-1">Commits</div>
+              </div>
+              <div className="text-center p-4 bg-background/50 rounded-lg">
+                <div className="text-3xl font-bold text-pink-600">{totalStats.prs}</div>
+                <div className="text-sm text-muted-foreground mt-1">Pull Requests</div>
+              </div>
+              <div className="text-center p-4 bg-background/50 rounded-lg">
+                <div className="text-3xl font-bold text-orange-600">{totalStats.reviews}</div>
+                <div className="text-sm text-muted-foreground mt-1">PR Reviews</div>
+              </div>
+              <div className="text-center p-4 bg-background/50 rounded-lg">
+                <div className="text-3xl font-bold text-green-600">{totalStats.features}</div>
+                <div className="text-sm text-muted-foreground mt-1">Features</div>
+              </div>
+              <div className="text-center p-4 bg-background/50 rounded-lg">
+                <div className="text-3xl font-bold text-red-600">{totalStats.bugs}</div>
+                <div className="text-sm text-muted-foreground mt-1">Bugs Fixed</div>
+              </div>
+              <div className="text-center p-4 bg-background/50 rounded-lg">
+                <div className="text-3xl font-bold text-yellow-600">{totalStats.issues}</div>
+                <div className="text-sm text-muted-foreground mt-1">Issues</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-4 mb-8">
           <Card>
@@ -264,80 +324,161 @@ export function DashboardClient({
             </CardHeader>
           </Card>
         ) : (
-          <div className="grid gap-6">
-            {brags.map((brag) => {
-              const date = new Date(brag.date).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              });
+          <div className="space-y-8">
+            {/* Weekly Summaries Section */}
+            {weeklyBrags.length > 0 && (
+              <div>
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold">📅 Weekly Summaries</h2>
+                  <p className="text-muted-foreground">High-level overview of your weekly progress</p>
+                </div>
+                <div className="grid gap-4">
+                  {weeklyBrags.map((brag) => {
+                    const startDate = new Date(brag.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                    const endDate = brag.periodEnd
+                      ? new Date(brag.periodEnd).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "";
 
-              return (
-                <Card key={brag.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-2xl">{date}</CardTitle>
-                        <div className="flex items-center gap-4 mt-2">
-                          <Badge variant="secondary">
-                            📊 {brag.workEventsCount} events
-                          </Badge>
-                          <Badge variant="secondary" className={getImpactColor(brag.impactScore)}>
-                            🔥 Impact: {brag.impactScore}/100
-                          </Badge>
-                          <Badge variant="secondary">
-                            🎯 {brag.achievements.length} achievements
-                          </Badge>
-                        </div>
-                      </div>
-                      <Badge>
-                        {brag.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
+                    return (
+                      <Card key={brag.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <CardTitle className="text-xl">
+                                Week of {startDate} - {endDate}
+                              </CardTitle>
+                              <div className="flex items-center gap-3 mt-2">
+                                <Badge variant="secondary">
+                                  📊 {brag.workEventsCount} events
+                                </Badge>
+                                <Badge variant="secondary" className={getImpactColor(brag.impactScore)}>
+                                  🔥 {brag.impactScore}/100
+                                </Badge>
+                                <Badge variant="secondary">
+                                  🎯 {brag.achievements.length} achievements
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    <div className="prose dark:prose-invert max-w-none">
-                      <p className="line-clamp-3 text-sm">
-                        {brag.userEditedSummary || brag.autoSummary}
-                      </p>
-                    </div>
+                        <CardContent className="space-y-4">
+                          <div className="prose dark:prose-invert max-w-none">
+                            <p className="line-clamp-2 text-sm">
+                              {brag.userEditedSummary || brag.autoSummary}
+                            </p>
+                          </div>
 
-                    {brag.achievements.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {brag.achievements.slice(0, 3).map((achievement) => (
-                          <Badge key={achievement.id} variant="outline">
-                            {achievement.impact === "high" ? "🔥" : "📈"}{" "}
-                            {achievement.title.substring(0, 40)}
-                            {achievement.title.length > 40 ? "..." : ""}
-                          </Badge>
-                        ))}
-                        {brag.achievements.length > 3 && (
-                          <Badge variant="outline">
-                            +{brag.achievements.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    )}
+                          <div className="flex gap-3 pt-2 border-t">
+                            <Button variant="link" asChild className="p-0">
+                              <Link href={`/dashboard/${brag.id}`}>
+                                View Details →
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="link"
+                              onClick={() => handleExport(brag)}
+                              className="p-0"
+                            >
+                              Export
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-                    <div className="flex gap-3 pt-4 border-t">
-                      <Button variant="link" asChild className="p-0">
-                        <Link href={`/dashboard/${brag.id}`}>
-                          View Details →
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="link"
-                        onClick={() => handleExport(brag)}
-                        className="p-0"
-                      >
-                        Export
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {/* Daily Brags Section */}
+            {dailyBrags.length > 0 && (
+              <div>
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold">📝 Daily Brags</h2>
+                  <p className="text-muted-foreground">Detailed daily activity records</p>
+                </div>
+                <div className="grid gap-4">
+                  {dailyBrags.map((brag) => {
+                    const date = new Date(brag.date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    });
+
+                    return (
+                      <Card key={brag.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-violet-500">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <CardTitle className="text-xl">{date}</CardTitle>
+                              <div className="flex items-center gap-3 mt-2">
+                                <Badge variant="secondary">
+                                  📊 {brag.workEventsCount} events
+                                </Badge>
+                                <Badge variant="secondary" className={getImpactColor(brag.impactScore)}>
+                                  🔥 {brag.impactScore}/100
+                                </Badge>
+                                <Badge variant="secondary">
+                                  🎯 {brag.achievements.length} achievements
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+
+                        <CardContent className="space-y-4">
+                          <div className="prose dark:prose-invert max-w-none">
+                            <p className="line-clamp-3 text-sm">
+                              {brag.userEditedSummary || brag.autoSummary}
+                            </p>
+                          </div>
+
+                          {brag.achievements.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {brag.achievements.slice(0, 3).map((achievement) => (
+                                <Badge key={achievement.id} variant="outline">
+                                  {achievement.impact === "high" ? "🔥" : "📈"}{" "}
+                                  {achievement.title.substring(0, 40)}
+                                  {achievement.title.length > 40 ? "..." : ""}
+                                </Badge>
+                              ))}
+                              {brag.achievements.length > 3 && (
+                                <Badge variant="outline">
+                                  +{brag.achievements.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex gap-3 pt-4 border-t">
+                            <Button variant="link" asChild className="p-0">
+                              <Link href={`/dashboard/${brag.id}`}>
+                                View Details →
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="link"
+                              onClick={() => handleExport(brag)}
+                              className="p-0"
+                            >
+                              Export
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
