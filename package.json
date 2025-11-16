@@ -9,9 +9,14 @@
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test:etl": "tsx scripts/test-github-etl.ts"
   },
-  "keywords": ["brag-doc", "achievement-tracking", "ai-coaching"],
+  "keywords": [
+    "brag-doc",
+    "achievement-tracking",
+    "ai-coaching"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -31,6 +36,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.7"
+    "drizzle-kit": "^0.31.7",
+    "tsx": "^4.20.6"
   }
 }

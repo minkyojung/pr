@@ -1,6 +1,7 @@
 import { db, workEvents } from "../db";
 import { GitHubETL } from "./github";
 import type { ETLConfig, ETLResult, WorkEvent } from "../types";
+import { and, eq, gte, lte } from "drizzle-orm";
 
 /**
  * ETL Orchestrator: 모든 소스에서 데이터 수집 및 DB 저장
@@ -116,8 +117,23 @@ export class ETLOrchestrator {
    * 특정 기간의 work events 조회
    */
   async getWorkEvents(userId: string, since?: Date, until?: Date) {
-    // TODO: Drizzle query 구현
-    return [];
+    const conditions = [eq(workEvents.userId, userId)];
+
+    if (since) {
+      conditions.push(gte(workEvents.eventTimestamp, since));
+    }
+
+    if (until) {
+      conditions.push(lte(workEvents.eventTimestamp, until));
+    }
+
+    const events = await db
+      .select()
+      .from(workEvents)
+      .where(and(...conditions))
+      .orderBy(workEvents.eventTimestamp);
+
+    return events;
   }
 }
 
