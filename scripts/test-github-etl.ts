@@ -38,12 +38,13 @@ async function main() {
   console.log(`📊 GitHub user: ${process.env.GITHUB_USERNAME}`);
   console.log(`📦 Database: ${process.env.DATABASE_URL}\n`);
 
-  // ETL 실행 (최근 30일 데이터)
+  // ETL 실행 (최근 90일 데이터 - 더 긴 기간으로 테스트)
   const userId = "test-user-1";
   const since = new Date();
-  since.setDate(since.getDate() - 30);
+  since.setDate(since.getDate() - 90);
 
   console.log(`🔍 Collecting GitHub data since ${since.toISOString().split('T')[0]}...\n`);
+  console.log(`⏳ This may take a minute...\n`);
 
   try {
     const result = await etl.runGitHub(userId, since);

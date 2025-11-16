@@ -28,17 +28,24 @@ export class GitHubETL {
 
     try {
       // 1. Commits 수집
+      console.log("[GitHubETL] Collecting commits...");
       const commits = await this.collectCommits(config);
+      console.log(`[GitHubETL] Found ${commits.length} commits`);
       events.push(...commits);
 
       // 2. Pull Requests 수집
+      console.log("[GitHubETL] Collecting pull requests...");
       const prs = await this.collectPullRequests(config);
+      console.log(`[GitHubETL] Found ${prs.length} pull requests`);
       events.push(...prs);
 
       // 3. Issues 수집
+      console.log("[GitHubETL] Collecting issues...");
       const issues = await this.collectIssues(config);
+      console.log(`[GitHubETL] Found ${issues.length} issues`);
       events.push(...issues);
 
+      console.log(`[GitHubETL] Total events collected: ${events.length}\n`);
       return events;
     } catch (error) {
       console.error("[GitHubETL] Error collecting data:", error);
