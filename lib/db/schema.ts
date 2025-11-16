@@ -1,11 +1,61 @@
-import { pgTable, uuid, text, timestamp, jsonb, integer, varchar } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, jsonb, integer, varchar, primaryKey } from "drizzle-orm/pg-core";
+
+/**
+ * NextAuth tables for authentication
+ */
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name"),
+  email: text("email").notNull().unique(),
+  emailVerified: timestamp("email_verified"),
+  image: text("image"),
+  githubUsername: varchar("github_username", { length: 255 }),
+  githubId: varchar("github_id", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const accounts = pgTable("accounts", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  provider: text("provider").notNull(),
+  providerAccountId: text("provider_account_id").notNull(),
+  refresh_token: text("refresh_token"),
+  access_token: text("access_token"),
+  expires_at: integer("expires_at"),
+  token_type: text("token_type"),
+  scope: text("scope"),
+  id_token: text("id_token"),
+  session_state: text("session_state"),
+}, (account) => ({
+  compoundKey: primaryKey({
+    columns: [account.provider, account.providerAccountId],
+  }),
+}));
+
+export const sessions = pgTable("sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sessionToken: text("session_token").notNull().unique(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires").notNull(),
+});
+
+export const verificationTokens = pgTable("verification_tokens", {
+  identifier: text("identifier").notNull(),
+  token: text("token").notNull(),
+  expires: timestamp("expires").notNull(),
+}, (vt) => ({
+  compoundKey: primaryKey({
+    columns: [vt.identifier, vt.token],
+  }),
+}));
 
 /**
  * work_event: 모든 소스에서 수집된 작업 이벤트를 저장하는 통합 스키마
  */
 export const workEvents = pgTable("work_events", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: varchar("user_id", { length: 255 }).notNull(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
 
   // 이벤트 기본 정보
   type: varchar("type", { length: 100 }).notNull(), // 'commit', 'pr', 'issue', 'meeting', 'slack_message', etc.
@@ -39,7 +89,7 @@ export const workEvents = pgTable("work_events", {
  */
 export const achievements = pgTable("achievements", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: varchar("user_id", { length: 255 }).notNull(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   dailyBragId: uuid("daily_brag_id"), // 어느 daily brag에 속하는지
 
   // 성과 내용
@@ -67,7 +117,7 @@ export const achievements = pgTable("achievements", {
  */
 export const dailyBrags = pgTable("daily_brags", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: varchar("user_id", { length: 255 }).notNull(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   date: timestamp("date").notNull(), // 해당 날짜 (YYYY-MM-DD)
 
   // 자동 생성된 요약
@@ -93,7 +143,7 @@ export const dailyBrags = pgTable("daily_brags", {
  */
 export const userPatterns = pgTable("user_patterns", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: varchar("user_id", { length: 255 }).notNull(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   patternType: varchar("pattern_type", { length: 50 }).notNull(), // 'speed', 'impact', 'collaboration', 'routine'
 
   // 패턴 데이터 (JSON으로 유연하게 저장)
@@ -111,7 +161,7 @@ export const userPatterns = pgTable("user_patterns", {
  */
 export const suggestions = pgTable("suggestions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: varchar("user_id", { length: 255 }).notNull(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   type: varchar("type", { length: 50 }).notNull(), // 'blocker', 'routine', 'impact', 'balance'
 
   // 제안 내용
