@@ -99,6 +99,64 @@ export interface PullRequestEvent {
 }
 
 // ============================================================
+// PUSH / COMMIT TYPES
+// ============================================================
+
+export interface GitHubCommit {
+  id: string;
+  message: string;
+  timestamp: string;
+  url: string;
+  author: {
+    name: string;
+    email: string;
+    username?: string;
+  };
+  added: string[];
+  removed: string[];
+  modified: string[];
+}
+
+export interface PushEvent {
+  ref: string; // e.g., "refs/heads/main"
+  before: string; // SHA before push
+  after: string; // SHA after push
+  created: boolean;
+  deleted: boolean;
+  forced: boolean;
+  commits: GitHubCommit[];
+  head_commit: GitHubCommit | null;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  pusher: {
+    name: string;
+    email: string;
+  };
+}
+
+// ============================================================
+// PULL REQUEST REVIEW TYPES
+// ============================================================
+
+export interface GitHubReview {
+  id: number;
+  body: string | null;
+  state: 'approved' | 'changes_requested' | 'commented' | 'dismissed';
+  user: GitHubUser;
+  commit_id: string;
+  submitted_at: string;
+  html_url: string;
+}
+
+export interface PullRequestReviewEvent {
+  action: 'submitted' | 'edited' | 'dismissed';
+  review: GitHubReview;
+  pull_request: GitHubPullRequest;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+}
+
+// ============================================================
 // COMMENT TYPES
 // ============================================================
 
@@ -141,27 +199,46 @@ export type GitHubWebhookPayload =
   | IssuesEvent
   | PullRequestEvent
   | IssueCommentEvent
-  | PullRequestReviewCommentEvent;
+  | PullRequestReviewCommentEvent
+  | PushEvent
+  | PullRequestReviewEvent;
 
 export type GitHubEventType =
   | 'issues'
   | 'pull_request'
   | 'issue_comment'
-  | 'pull_request_review_comment';
+  | 'pull_request_review_comment'
+  | 'push'
+  | 'pull_request_review';
 
 // ============================================================
 // INTERNAL EVENT REPRESENTATION
 // ============================================================
 
+/**
+ * Internal event types - platform-agnostic representation
+ *
+ * These are normalized event types that abstract away platform-specific
+ * webhook event names. This allows us to represent events from multiple
+ * platforms (GitHub, GitLab, Bitbucket, etc.) in a unified way.
+ */
+export type InternalEventType =
+  | 'commit'          // Represents code commits (from push, merge, etc.)
+  | 'issue'           // Represents issue events
+  | 'pull_request'    // Represents pull request events
+  | 'comment'         // Represents comments on issues/PRs
+  | 'review';         // Represents PR reviews
+
 export interface ParsedGitHubEvent {
   // Event metadata
-  eventType: GitHubEventType;
+  eventType: InternalEventType;     // Our internal event type
+  sourceWebhook: GitHubEventType;   // Original GitHub webhook type
   action: string;
   timestamp: Date;
 
   // Object identification
-  objectId: string; // Format: "github:repo:owner/name:type:number"
-  objectType: 'issue' | 'pull_request' | 'comment';
+  objectId: string; // Format: "github:repo:owner/name:type:number" or "github:repo:owner/name:commit:sha"
+  objectType: 'issue' | 'pull_request' | 'comment' | 'commit' | 'review';
   platform: 'github';
 
   // Repository info
@@ -196,6 +273,25 @@ export interface ParsedGitHubEvent {
     draft?: boolean;
     headRef?: string;
     baseRef?: string;
+
+    // For commits
+    sha?: string;
+    message?: string;
+    author?: {
+      name: string;
+      email: string;
+      username?: string;
+    };
+    filesChanged?: {
+      added: string[];
+      removed: string[];
+      modified: string[];
+    };
+
+    // For reviews
+    reviewId?: number;
+    reviewState?: 'approved' | 'changes_requested' | 'commented' | 'dismissed';
+    commitId?: string;
   };
 
   // Changes (diff)

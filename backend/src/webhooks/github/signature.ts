@@ -54,6 +54,13 @@ export function verifyGitHubSignature(
   res: Response,
   next: NextFunction
 ): void {
+  // Skip signature verification in development mode for easier testing
+  if (process.env.NODE_ENV === 'development') {
+    console.log('⚠️  Development mode: Skipping webhook signature verification');
+    next();
+    return;
+  }
+
   const signature = req.headers['x-hub-signature-256'] as string;
   const secret = process.env.GITHUB_WEBHOOK_SECRET;
 

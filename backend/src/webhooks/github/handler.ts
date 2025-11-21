@@ -11,13 +11,15 @@ import { parseGitHubEvent } from './parser';
 import { storeEvent } from '../../services/event-store';
 
 /**
- * Supported GitHub event types for Phase 0 MVP
+ * Supported GitHub event types
  */
 const SUPPORTED_EVENTS: GitHubEventType[] = [
   'issues',
   'pull_request',
   'issue_comment',
   'pull_request_review_comment',
+  'push',
+  'pull_request_review',
 ];
 
 /**
@@ -64,16 +66,23 @@ export async function handleGitHubWebhook(
       payload
     );
 
-    // Store the event
-    const eventId = await storeEvent(parsedEvent);
+    // Store the event(s)
+    // Push events can return multiple events (one per commit)
+    const events = Array.isArray(parsedEvent) ? parsedEvent : [parsedEvent];
+    const eventIds: string[] = [];
+
+    for (const event of events) {
+      const eventId = await storeEvent(event);
+      eventIds.push(eventId);
+    }
 
     // Send success response
     res.status(200).json({
       message: 'Webhook processed successfully',
-      eventId,
-      objectId: parsedEvent.objectId,
-      eventType: parsedEvent.eventType,
-      action: parsedEvent.action,
+      eventIds,
+      count: eventIds.length,
+      eventType: events[0].eventType,
+      action: events[0].action,
     });
   } catch (error) {
     console.error('Error processing GitHub webhook', {

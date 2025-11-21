@@ -13,8 +13,11 @@ import {
   PullRequestEvent,
   IssueCommentEvent,
   PullRequestReviewCommentEvent,
+  PushEvent,
+  PullRequestReviewEvent,
   GitHubIssue,
   GitHubPullRequest,
+  GitHubCommit,
 } from './types';
 
 /**
@@ -84,7 +87,8 @@ function parseIssuesEvent(payload: IssuesEvent): ParsedGitHubEvent {
   );
 
   return {
-    eventType: 'issues',
+    eventType: 'issue',           // Internal event type
+    sourceWebhook: 'issues',      // Original webhook type
     action,
     timestamp: new Date(issue.updated_at),
     objectId,
@@ -127,7 +131,8 @@ function parsePullRequestEvent(payload: PullRequestEvent): ParsedGitHubEvent {
   );
 
   return {
-    eventType: 'pull_request',
+    eventType: 'pull_request',    // Internal event type
+    sourceWebhook: 'pull_request', // Original webhook type
     action,
     timestamp: new Date(pull_request.updated_at),
     objectId,
@@ -176,7 +181,8 @@ function parseIssueCommentEvent(
   );
 
   return {
-    eventType: 'issue_comment',
+    eventType: 'comment',         // Internal event type
+    sourceWebhook: 'issue_comment', // Original webhook type
     action,
     timestamp: new Date(comment.updated_at),
     objectId,
@@ -222,7 +228,8 @@ function parsePullRequestReviewCommentEvent(
   );
 
   return {
-    eventType: 'pull_request_review_comment',
+    eventType: 'comment',                      // Internal event type
+    sourceWebhook: 'pull_request_review_comment', // Original webhook type
     action,
     timestamp: new Date(comment.updated_at),
     objectId,
@@ -254,14 +261,126 @@ function parsePullRequestReviewCommentEvent(
 }
 
 /**
+ * Parse a Push event
+ * Note: For push events with multiple commits, we create ONE event per commit
+ * Transforms GitHub 'push' webhook into internal 'commit' events
+ */
+function parsePushEvent(payload: PushEvent): ParsedGitHubEvent[] {
+  const { repository, sender, pusher, ref, commits } = payload;
+  const branch = ref.replace('refs/heads/', '');
+
+  // Create an event for each commit
+  return commits.map((commit: GitHubCommit) => {
+    const objectId = `github:repo:${repository.full_name}:commit:${commit.id}`;
+
+    return {
+      eventType: 'commit',          // Internal event type
+      sourceWebhook: 'push',        // Original webhook type
+      action: 'pushed',
+      timestamp: new Date(commit.timestamp),
+      objectId,
+      objectType: 'commit',
+      platform: 'github',
+      repository: {
+        id: repository.id,
+        fullName: repository.full_name,
+        owner: repository.owner.login,
+        name: repository.name,
+        url: repository.html_url,
+      },
+      actor: {
+        login: commit.author.username || sender.login,
+        id: sender.id,
+        url: sender.html_url,
+      },
+      object: {
+        sha: commit.id,
+        message: commit.message,
+        url: commit.url,
+        author: commit.author,
+        title: commit.message.split('\n')[0], // First line of commit message
+        body: commit.message,
+        filesChanged: {
+          added: commit.added,
+          removed: commit.removed,
+          modified: commit.modified,
+        },
+      },
+      diff: {
+        action: 'pushed',
+        branch,
+        sha: commit.id,
+        message: commit.message,
+        filesChanged: commit.added.length + commit.removed.length + commit.modified.length,
+      },
+      raw: payload,
+    };
+  });
+}
+
+/**
+ * Parse a Pull Request Review event
+ */
+function parsePullRequestReviewEvent(
+  payload: PullRequestReviewEvent
+): ParsedGitHubEvent {
+  const { review, pull_request, repository, sender, action } = payload;
+
+  const objectId = generateObjectId(
+    repository.full_name,
+    'review',
+    review.id
+  );
+
+  return {
+    eventType: 'review',               // Internal event type
+    sourceWebhook: 'pull_request_review', // Original webhook type
+    action,
+    timestamp: new Date(review.submitted_at),
+    objectId,
+    objectType: 'review',
+    platform: 'github',
+    repository: {
+      id: repository.id,
+      fullName: repository.full_name,
+      owner: repository.owner.login,
+      name: repository.name,
+      url: repository.html_url,
+    },
+    actor: {
+      login: sender.login,
+      id: sender.id,
+      url: sender.html_url,
+    },
+    object: {
+      reviewId: review.id,
+      body: review.body || '',
+      url: review.html_url,
+      reviewState: review.state,
+      commitId: review.commit_id,
+      // Include parent PR info
+      number: pull_request.number,
+      title: pull_request.title,
+    },
+    diff: {
+      action,
+      reviewState: review.state,
+      commitId: review.commit_id,
+    },
+    raw: payload,
+  };
+}
+
+/**
  * Main parser function
  *
  * Determines event type and delegates to appropriate parser
+ * Note: Returns an array because push events can have multiple commits
  */
 export function parseGitHubEvent(
   eventType: GitHubEventType,
   payload: GitHubWebhookPayload
-): ParsedGitHubEvent {
+): ParsedGitHubEvent | ParsedGitHubEvent[] {
   switch (eventType) {
     case 'issues':
       return parseIssuesEvent(payload as IssuesEvent);
@@ -276,6 +395,12 @@ export function parseGitHubEvent(
       return parsePullRequestReviewCommentEvent(
         payload as PullRequestReviewCommentEvent
       );
+
+    case 'push':
+      return parsePushEvent(payload as PushEvent);
+
+    case 'pull_request_review':
+      return parsePullRequestReviewEvent(payload as PullRequestReviewEvent);
 
     default:
       throw new Error(`Unsupported event type: ${eventType}`);
