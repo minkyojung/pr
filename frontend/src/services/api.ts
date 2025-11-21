@@ -1,0 +1,160 @@
+/**
+ * API Client Service
+ *
+ * Handles all API requests to the backend
+ */
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+export interface TimelineEntry {
+  eventId: string;
+  eventType: string;
+  action: string;
+  timestamp: string;
+  actor: string;
+  objectId: string;
+  objectType: string;
+  platform: string;
+  title: string;
+  repository: string;
+  url: string;
+  properties: any;
+}
+
+export interface SearchResult {
+  objectId: string;
+  platform: string;
+  objectType: string;
+  title: string;
+  body: string;
+  repository: string;
+  url: string;
+  actors: any;
+  timestamps: any;
+  properties: any;
+  rank: number;
+}
+
+export interface TimelineStats {
+  totalEvents: number;
+  totalObjects: number;
+  eventsByType: Record<string, number>;
+  objectsByType: Record<string, number>;
+}
+
+export interface TimelineResponse {
+  success: boolean;
+  data: TimelineEntry[];
+  pagination: {
+    limit: number;
+    offset: number;
+    count: number;
+  };
+  stats?: TimelineStats;
+}
+
+export interface SearchResponse {
+  success: boolean;
+  query: string;
+  data: SearchResult[];
+  pagination: {
+    limit: number;
+    offset: number;
+    count: number;
+  };
+}
+
+export interface ObjectResponse {
+  success: boolean;
+  data: any;
+}
+
+class ApiClient {
+  private baseUrl: string;
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+
+  private async request<T>(endpoint: string): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get timeline entries
+   */
+  async getTimeline(params?: {
+    repository?: string;
+    objectType?: string;
+    actor?: string;
+    limit?: number;
+    offset?: number;
+    stats?: boolean;
+  }): Promise<TimelineResponse> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.repository) searchParams.set('repository', params.repository);
+    if (params?.objectType) searchParams.set('objectType', params.objectType);
+    if (params?.actor) searchParams.set('actor', params.actor);
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.offset) searchParams.set('offset', params.offset.toString());
+    if (params?.stats) searchParams.set('stats', 'true');
+
+    const query = searchParams.toString();
+    const endpoint = `/api/timeline${query ? `?${query}` : ''}`;
+
+    return this.request<TimelineResponse>(endpoint);
+  }
+
+  /**
+   * Search objects
+   */
+  async search(
+    query: string,
+    params?: {
+      objectType?: string;
+      repository?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<SearchResponse> {
+    const searchParams = new URLSearchParams({ q: query });
+
+    if (params?.objectType) searchParams.set('objectType', params.objectType);
+    if (params?.repository) searchParams.set('repository', params.repository);
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.offset) searchParams.set('offset', params.offset.toString());
+
+    return this.request<SearchResponse>(`/api/search?${searchParams}`);
+  }
+
+  /**
+   * Get object details
+   */
+  async getObject(objectId: string): Promise<ObjectResponse> {
+    const encodedId = encodeURIComponent(objectId);
+    return this.request<ObjectResponse>(`/api/objects/${encodedId}`);
+  }
+
+  /**
+   * Get autocomplete suggestions
+   */
+  async getAutocompleteSuggestions(
+    query: string,
+    limit?: number
+  ): Promise<{ success: boolean; query: string; suggestions: string[] }> {
+    const searchParams = new URLSearchParams({ q: query });
+    if (limit) searchParams.set('limit', limit.toString());
+
+    return this.request(`/api/search/autocomplete?${searchParams}`);
+  }
+}
+
+// Export singleton instance
+export const api = new ApiClient(API_BASE_URL);
