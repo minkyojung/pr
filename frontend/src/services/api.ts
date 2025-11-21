@@ -64,6 +64,29 @@ export interface SearchResponse {
   };
 }
 
+export interface SemanticSearchResult {
+  id: string;
+  score: number;
+  payload: {
+    object_id: string;
+    object_type: string;
+    platform: string;
+    repository: string;
+    created_by: string;
+    state: string;
+    title: string;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+export interface SemanticSearchResponse {
+  success: boolean;
+  query: string;
+  data: SemanticSearchResult[];
+  count: number;
+}
+
 export interface ObjectResponse {
   success: boolean;
   data: any;
@@ -113,7 +136,7 @@ class ApiClient {
   }
 
   /**
-   * Search objects
+   * Search objects (keyword search)
    */
   async search(
     query: string,
@@ -132,6 +155,28 @@ class ApiClient {
     if (params?.offset) searchParams.set('offset', params.offset.toString());
 
     return this.request<SearchResponse>(`/api/search?${searchParams}`);
+  }
+
+  /**
+   * Semantic search using AI embeddings
+   */
+  async semanticSearch(
+    query: string,
+    params?: {
+      objectType?: string;
+      repository?: string;
+      limit?: number;
+      threshold?: number;
+    }
+  ): Promise<SemanticSearchResponse> {
+    const searchParams = new URLSearchParams({ q: query });
+
+    if (params?.objectType) searchParams.set('objectType', params.objectType);
+    if (params?.repository) searchParams.set('repository', params.repository);
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.threshold) searchParams.set('threshold', params.threshold.toString());
+
+    return this.request<SemanticSearchResponse>(`/api/search/semantic?${searchParams}`);
   }
 
   /**

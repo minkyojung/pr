@@ -39,6 +39,9 @@ import {
 import { getTimeline, getTimelineStats } from './services/timeline';
 import { searchObjects, getAutocompleteSuggestions } from './services/search';
 import { getCanonicalObject } from './services/event-store';
+import { semanticSearch } from './services/vector-store';
+import { initializeCollection, getCollectionInfo } from './services/qdrant-collections';
+import { checkQdrantHealth } from './services/qdrant-client';
 
 // Create Express app
 const app = express();
@@ -124,12 +127,17 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.get('/health', async (req: Request, res: Response) => {
   try {
     const dbHealthy = await db.testConnection();
-    res.status(dbHealthy ? 200 : 503).json({
-      status: dbHealthy ? 'healthy' : 'unhealthy',
+    const qdrantHealthy = await checkQdrantHealth();
+
+    const allHealthy = dbHealthy && qdrantHealthy;
+
+    res.status(allHealthy ? 200 : 503).json({
+      status: allHealthy ? 'healthy' : 'degraded',
       service: 'unified-timeline',
       version: '0.1.0',
       timestamp: new Date().toISOString(),
       database: dbHealthy ? 'connected' : 'disconnected',
+      qdrant: qdrantHealthy ? 'connected' : 'disconnected',
     });
   } catch (error) {
     res.status(503).json({
@@ -306,6 +314,79 @@ app.get('/api/search/autocomplete', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/search/semantic
+ *
+ * Semantic search using AI embeddings
+ * Query params:
+ * - q: natural language search query (required)
+ * - objectType: filter by type (issue, pull_request, comment, commit, review)
+ * - repository: filter by repository
+ * - limit: number of results (default 10, max 50)
+ * - threshold: minimum similarity score (0.0 to 1.0, default 0.5)
+ */
+app.get('/api/search/semantic', async (req: Request, res: Response) => {
+  try {
+    const { q, objectType, repository, limit, threshold } = req.query;
+
+    if (!q || typeof q !== 'string') {
+      res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: q',
+      });
+      return;
+    }
+
+    // Build filter if needed
+    const filter: any = {};
+    if (objectType) {
+      filter.must = filter.must || [];
+      filter.must.push({
+        key: 'object_type',
+        match: { value: objectType },
+      });
+    }
+    if (repository) {
+      filter.must = filter.must || [];
+      filter.must.push({
+        key: 'repository',
+        match: { value: repository },
+      });
+    }
+
+    const results = await semanticSearch(q, {
+      limit: limit ? Math.min(parseInt(limit as string), 50) : 10,
+      filter: Object.keys(filter).length > 0 ? filter : undefined,
+      scoreThreshold: threshold ? parseFloat(threshold as string) : 0.5,
+    });
+
+    res.status(200).json({
+      success: true,
+      query: q,
+      data: results,
+      count: results.length,
+    });
+  } catch (error) {
+    console.error('Semantic search API error:', error);
+
+    // Check if it's an OpenAI API key error
+    if (error instanceof Error && error.message.includes('OPENAI_API_KEY')) {
+      res.status(503).json({
+        success: false,
+        error: 'Semantic search unavailable',
+        message: 'OpenAI API key not configured. Please set OPENAI_API_KEY in your .env file.',
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Semantic search failed',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
  * GET /api/objects/:id
  *
  * Get object details by ID
@@ -379,6 +460,16 @@ async function startServer() {
       console.error('Failed to connect to database');
       console.error('Make sure PostgreSQL is running: docker-compose up');
       process.exit(1);
+    }
+
+    // Initialize Qdrant collection
+    console.log('Initializing Qdrant collection...');
+    try {
+      await initializeCollection();
+      console.log('Qdrant collection ready');
+    } catch (error) {
+      console.warn('Qdrant initialization failed:', error instanceof Error ? error.message : error);
+      console.warn('Semantic search will be unavailable. Make sure Qdrant is running: docker-compose up');
     }
 
     // Start Express server

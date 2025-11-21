@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
-    "backfill": "ts-node scripts/backfill-github-data.ts"
+    "backfill": "ts-node scripts/backfill-github-data.ts",
+    "sync-qdrant": "ts-node scripts/sync-to-qdrant.ts"
   },
   "keywords": [
     "timeline",
