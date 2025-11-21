@@ -1,12 +1,17 @@
 /**
  * Object Detail Component
+ * Migrated to shadcn/ui
  */
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { api } from '../services/api';
-import './ObjectDetail.css';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function ObjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -36,29 +41,40 @@ export function ObjectDetail() {
 
   if (loading) {
     return (
-      <div className="object-detail-container">
-        <div className="loading">Loading...</div>
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-muted-foreground">Loading...</div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="object-detail-container">
-        <div className="error">
-          Error: {error}
-          <Link to="/" className="back-link">
-            ← Back to Timeline
-          </Link>
-        </div>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Error: {error}
+          </AlertDescription>
+        </Alert>
+        <Link to="/" className="inline-block mt-4">
+          <Button variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Timeline
+          </Button>
+        </Link>
       </div>
     );
   }
 
   if (!object) {
     return (
-      <div className="object-detail-container">
-        <div className="error">Object not found</div>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertDescription>Object not found</AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -66,70 +82,106 @@ export function ObjectDetail() {
   const { title, body, actors, timestamps, properties, platform, object_type } =
     object;
 
+  const getStateVariant = (state: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    switch (state) {
+      case 'open':
+        return 'default';
+      case 'closed':
+        return 'destructive';
+      case 'merged':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
-    <div className="object-detail-container">
-      <Link to="/" className="back-link">
-        ← Back to Timeline
+    <div className="container mx-auto p-6 space-y-6">
+      <Link to="/" className="inline-block">
+        <Button variant="ghost">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Timeline
+        </Button>
       </Link>
 
-      <div className="object-header">
-        <div className="object-meta">
-          <span className="object-platform">{platform}</span>
-          <span className="object-type">{object_type}</span>
-          {properties.state && (
-            <span className={`object-state state-${properties.state}`}>
-              {properties.state}
-            </span>
-          )}
-        </div>
-        <h1>{title}</h1>
-      </div>
-
-      <div className="object-info">
-        <div className="info-item">
-          <strong>Repository:</strong> {properties.repository}
-        </div>
-        <div className="info-item">
-          <strong>Created by:</strong> {actors.created_by}
-        </div>
-        <div className="info-item">
-          <strong>Created:</strong>{' '}
-          {formatDistanceToNow(new Date(timestamps.created_at), {
-            addSuffix: true,
-          })}
-        </div>
-        <div className="info-item">
-          <strong>Updated:</strong>{' '}
-          {formatDistanceToNow(new Date(timestamps.updated_at), {
-            addSuffix: true,
-          })}
-        </div>
-        {properties.number && (
-          <div className="info-item">
-            <strong>Number:</strong> #{properties.number}
+      <Card>
+        <CardHeader className="border-b">
+          <div className="flex items-center gap-2 flex-wrap mb-4">
+            <Badge variant="secondary">{platform}</Badge>
+            <Badge variant="outline">{object_type}</Badge>
+            {properties.state && (
+              <Badge variant={getStateVariant(properties.state)}>
+                {properties.state}
+              </Badge>
+            )}
           </div>
-        )}
-      </div>
+          <CardTitle className="text-3xl">{title}</CardTitle>
+        </CardHeader>
 
-      {body && (
-        <div className="object-body">
-          <h2>Description</h2>
-          <div className="body-content">{body}</div>
-        </div>
-      )}
+        <CardContent className="pt-6 space-y-6">
+          {/* Info Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+            <div className="text-sm">
+              <span className="font-semibold">Repository:</span>{' '}
+              <span className="text-muted-foreground">{properties.repository}</span>
+            </div>
+            <div className="text-sm">
+              <span className="font-semibold">Created by:</span>{' '}
+              <span className="text-muted-foreground">{actors.created_by}</span>
+            </div>
+            <div className="text-sm">
+              <span className="font-semibold">Created:</span>{' '}
+              <span className="text-muted-foreground">
+                {formatDistanceToNow(new Date(timestamps.created_at), {
+                  addSuffix: true,
+                })}
+              </span>
+            </div>
+            <div className="text-sm">
+              <span className="font-semibold">Updated:</span>{' '}
+              <span className="text-muted-foreground">
+                {formatDistanceToNow(new Date(timestamps.updated_at), {
+                  addSuffix: true,
+                })}
+              </span>
+            </div>
+            {properties.number && (
+              <div className="text-sm">
+                <span className="font-semibold">Number:</span>{' '}
+                <span className="text-muted-foreground">#{properties.number}</span>
+              </div>
+            )}
+          </div>
 
-      {properties.url && (
-        <div className="object-actions">
-          <a
-            href={properties.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="view-on-github-button"
-          >
-            View on GitHub →
-          </a>
-        </div>
-      )}
+          {/* Body */}
+          {body && (
+            <div>
+              <h2 className="text-xl font-semibold mb-3 pb-2 border-b">
+                Description
+              </h2>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap p-4 bg-muted rounded-lg">
+                {body}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          {properties.url && (
+            <div className="pt-4 border-t">
+              <a
+                href={properties.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button>
+                  View on GitHub
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </a>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
