@@ -272,7 +272,11 @@ function convertIssueToEvent(issue: any, owner: string, repo: string, action: st
 /**
  * Convert GitHub API comment to webhook event format
  */
-function convertCommentToEvent(comment: any, issue: any) {
+function convertCommentToEvent(comment: any, issue: any, owner: string, repo: string) {
+  const fullName = issue.repository_url ?
+    issue.repository_url.split('/repos/')[1] :
+    `${owner}/${repo}`;
+
   return {
     action: 'created',
     issue: {
@@ -288,8 +292,21 @@ function convertCommentToEvent(comment: any, issue: any) {
       html_url: comment.html_url,
     },
     repository: {
-      full_name: issue.repository_url.split('/repos/')[1],
+      id: 0,
+      full_name: fullName,
+      name: repo,
+      owner: {
+        login: owner,
+        id: 0,
+        avatar_url: '',
+        html_url: `https://github.com/${owner}`,
+        type: 'User',
+      },
+      html_url: `https://github.com/${fullName}`,
+      description: null,
+      private: false,
     },
+    sender: comment.user,
   };
 }
 
@@ -507,7 +524,7 @@ async function backfillData(config: BackfillConfig) {
       );
 
       for (const comment of comments) {
-        const commentEvent = convertCommentToEvent(comment, issue);
+        const commentEvent = convertCommentToEvent(comment, issue, config.owner, config.repo);
         await storeGitHubEvent('issue_comment', commentEvent);
         eventCount++;
       }
