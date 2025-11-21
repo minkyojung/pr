@@ -14,6 +14,8 @@ import {
   MessageSquare,
   Pin,
   ExternalLink,
+  GitCommit,
+  CheckCircle2,
 } from 'lucide-react';
 import { api } from '../services/api';
 import type { TimelineEntry } from '../services/api';
@@ -59,12 +61,18 @@ export function Timeline() {
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
       case 'issues':
+      case 'issue':
         return <Bug className="h-6 w-6" />;
       case 'pull_request':
         return <GitPullRequest className="h-6 w-6" />;
       case 'issue_comment':
       case 'pull_request_review_comment':
+      case 'comment':
         return <MessageSquare className="h-6 w-6" />;
+      case 'commit':
+        return <GitCommit className="h-6 w-6" />;
+      case 'review':
+        return <CheckCircle2 className="h-6 w-6" />;
       default:
         return <Pin className="h-6 w-6" />;
     }
@@ -109,6 +117,28 @@ export function Timeline() {
           return `deleted comment`;
         default:
           return `${action} comment`;
+      }
+    }
+
+    if (eventType === 'comment') {
+      return 'commented';
+    }
+
+    if (eventType === 'commit') {
+      return 'pushed commit';
+    }
+
+    if (eventType === 'review') {
+      const reviewState = entry.properties?.reviewState;
+      switch (reviewState) {
+        case 'approved':
+          return 'approved pull request';
+        case 'changes_requested':
+          return 'requested changes';
+        case 'commented':
+          return 'reviewed pull request';
+        default:
+          return 'reviewed pull request';
       }
     }
 
@@ -175,6 +205,8 @@ export function Timeline() {
                 <SelectItem value="issue">Issues</SelectItem>
                 <SelectItem value="pull_request">Pull Requests</SelectItem>
                 <SelectItem value="comment">Comments</SelectItem>
+                <SelectItem value="commit">Commits</SelectItem>
+                <SelectItem value="review">Reviews</SelectItem>
               </SelectContent>
             </Select>
             <Input
