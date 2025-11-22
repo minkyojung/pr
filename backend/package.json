@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "test": "jest",
     "backfill": "ts-node scripts/backfill-github-data.ts",
-    "sync-qdrant": "ts-node scripts/sync-to-qdrant.ts"
+    "sync-qdrant": "ts-node scripts/sync-to-qdrant.ts",
+    "benchmark": "ts-node scripts/benchmark-search.ts"
   },
   "keywords": [
     "timeline",
@@ -25,6 +26,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "ml-kmeans": "^7.0.0",
     "openai": "^4.20.1",
     "pg": "^8.11.3"
   },

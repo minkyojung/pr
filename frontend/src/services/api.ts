@@ -87,6 +87,40 @@ export interface SemanticSearchResponse {
   count: number;
 }
 
+export interface HybridSearchResult {
+  objectId: string;
+  platform: string;
+  objectType: string;
+  title: string;
+  body: string;
+  repository: string;
+  url: string;
+  actors: any;
+  timestamps: any;
+  properties: any;
+
+  // Hybrid search metadata
+  rrfScore: number;
+  normalizedScore: number;
+  matchType: 'keyword' | 'semantic' | 'hybrid';
+  keywordRank?: number;
+  semanticRank?: number;
+  keywordScore?: number;
+  semanticScore?: number;
+}
+
+export interface HybridSearchResponse {
+  success: boolean;
+  query: string;
+  data: HybridSearchResult[];
+  pagination: {
+    limit: number;
+    offset: number;
+    count: number;
+  };
+  stats?: any;
+}
+
 export interface ObjectResponse {
   success: boolean;
   data: any;
@@ -180,6 +214,36 @@ class ApiClient {
   }
 
   /**
+   * Hybrid search combining keyword and semantic search using RRF
+   */
+  async hybridSearch(
+    query: string,
+    params?: {
+      objectType?: string;
+      repository?: string;
+      limit?: number;
+      offset?: number;
+      minSources?: number;
+      threshold?: number;
+      rrfK?: number;
+      stats?: boolean;
+    }
+  ): Promise<HybridSearchResponse> {
+    const searchParams = new URLSearchParams({ q: query });
+
+    if (params?.objectType) searchParams.set('objectType', params.objectType);
+    if (params?.repository) searchParams.set('repository', params.repository);
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.offset) searchParams.set('offset', params.offset.toString());
+    if (params?.minSources) searchParams.set('minSources', params.minSources.toString());
+    if (params?.threshold) searchParams.set('threshold', params.threshold.toString());
+    if (params?.rrfK) searchParams.set('rrfK', params.rrfK.toString());
+    if (params?.stats) searchParams.set('stats', 'true');
+
+    return this.request<HybridSearchResponse>(`/api/search/hybrid?${searchParams}`);
+  }
+
+  /**
    * Get object details
    */
   async getObject(objectId: string): Promise<ObjectResponse> {
@@ -198,6 +262,56 @@ class ApiClient {
     if (limit) searchParams.set('limit', limit.toString());
 
     return this.request(`/api/search/autocomplete?${searchParams}`);
+  }
+
+  /**
+   * Find similar objects
+   */
+  async findSimilarObjects(
+    objectId: string,
+    params?: {
+      limit?: number;
+      threshold?: number;
+      objectType?: string;
+      repository?: string;
+    }
+  ): Promise<{
+    success: boolean;
+    objectId: string;
+    data: any[];
+    count: number;
+  }> {
+    const encodedId = encodeURIComponent(objectId);
+    const searchParams = new URLSearchParams();
+
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.threshold) searchParams.set('threshold', params.threshold.toString());
+    if (params?.objectType) searchParams.set('objectType', params.objectType);
+    if (params?.repository) searchParams.set('repository', params.repository);
+
+    const query = searchParams.toString();
+    return this.request(`/api/clustering/similar/${encodedId}${query ? `?${query}` : ''}`);
+  }
+
+  /**
+   * Detect duplicate objects
+   */
+  async detectDuplicates(
+    objectId: string,
+    threshold?: number
+  ): Promise<{
+    success: boolean;
+    objectId: string;
+    data: any[];
+    count: number;
+  }> {
+    const encodedId = encodeURIComponent(objectId);
+    const searchParams = new URLSearchParams();
+
+    if (threshold) searchParams.set('threshold', threshold.toString());
+
+    const query = searchParams.toString();
+    return this.request(`/api/clustering/duplicates/${encodedId}${query ? `?${query}` : ''}`);
   }
 }
 

@@ -42,6 +42,19 @@ import { getCanonicalObject } from './services/event-store';
 import { semanticSearch } from './services/vector-store';
 import { initializeCollection, getCollectionInfo } from './services/qdrant-collections';
 import { checkQdrantHealth } from './services/qdrant-client';
+import { hybridSearch, getHybridSearchStats } from './services/hybrid-search';
+import {
+  findSimilarObjects,
+  detectDuplicates,
+  findObjectsByQuery,
+  getClusteringStats,
+} from './services/clustering';
+import {
+  runClusteringPipeline,
+  getClusteringPipelineStats,
+} from './services/clustering-pipeline';
+import { getClusterStats, getClusterMembers } from './services/kmeans-clustering';
+import { regenerateClusterLabel, getAllClusterLabels } from './services/topic-labeling';
 
 // Create Express app
 const app = express();
@@ -381,6 +394,446 @@ app.get('/api/search/semantic', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Semantic search failed',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/search/hybrid
+ *
+ * Hybrid search combining keyword search (PostgreSQL) and semantic search (Qdrant)
+ * using Reciprocal Rank Fusion (RRF) for optimal results.
+ *
+ * Query params:
+ * - q: search query (required)
+ * - objectType: filter by type (issue, pull_request, comment, commit, review)
+ * - repository: filter by repository
+ * - limit: number of results (default 10, max 50)
+ * - offset: pagination offset (default 0)
+ * - minSources: minimum matching sources (1=union, 2=intersection) (default 1)
+ * - threshold: minimum semantic similarity score (0.0 to 1.0)
+ * - rrfK: RRF constant parameter (default 60)
+ * - stats: include search statistics (true/false)
+ */
+app.get('/api/search/hybrid', async (req: Request, res: Response) => {
+  try {
+    const {
+      q,
+      objectType,
+      repository,
+      limit,
+      offset,
+      minSources,
+      threshold,
+      rrfK,
+      stats,
+    } = req.query;
+
+    if (!q || typeof q !== 'string') {
+      res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: q',
+      });
+      return;
+    }
+
+    // Get search results
+    const results = await hybridSearch(q, {
+      objectType: objectType as any,
+      repository: repository as string,
+      limit: limit ? Math.min(parseInt(limit as string), 50) : 10,
+      offset: offset ? parseInt(offset as string) : 0,
+      minSources: minSources ? parseInt(minSources as string) : 1,
+      semanticThreshold: threshold ? parseFloat(threshold as string) : undefined,
+      rrfK: rrfK ? parseInt(rrfK as string) : 60,
+    });
+
+    // Get stats if requested
+    let searchStats = undefined;
+    if (stats === 'true') {
+      searchStats = await getHybridSearchStats(q, {
+        objectType: objectType as any,
+        repository: repository as string,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      query: q,
+      data: results,
+      pagination: {
+        limit: limit ? parseInt(limit as string) : 10,
+        offset: offset ? parseInt(offset as string) : 0,
+        count: results.length,
+      },
+      stats: searchStats,
+    });
+  } catch (error) {
+    console.error('Hybrid search API error:', error);
+
+    // Check if it's a dependency error
+    if (error instanceof Error) {
+      if (error.message.includes('OPENAI_API_KEY')) {
+        res.status(503).json({
+          success: false,
+          error: 'Hybrid search unavailable',
+          message:
+            'OpenAI API key not configured. Please set OPENAI_API_KEY in your .env file.',
+        });
+        return;
+      }
+
+      if (error.message.includes('Qdrant')) {
+        res.status(503).json({
+          success: false,
+          error: 'Hybrid search unavailable',
+          message: 'Qdrant vector database is not available. Make sure Qdrant is running.',
+        });
+        return;
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Hybrid search failed',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/clustering/similar/:id
+ *
+ * Find objects similar to a given object
+ *
+ * Query params:
+ * - limit: number of similar objects to return (default 10, max 50)
+ * - threshold: minimum similarity score 0.0-1.0 (default 0.5)
+ * - objectType: filter by type (issue, pull_request, etc.)
+ * - repository: filter by repository
+ */
+app.get('/api/clustering/similar/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { limit, threshold, objectType, repository } = req.query;
+
+    const decodedId = decodeURIComponent(id);
+
+    const similarObjects = await findSimilarObjects(decodedId, {
+      limit: limit ? Math.min(parseInt(limit as string), 50) : 10,
+      threshold: threshold ? parseFloat(threshold as string) : 0.5,
+      objectType: objectType as string,
+      repository: repository as string,
+      excludeSelf: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      objectId: decodedId,
+      data: similarObjects,
+      count: similarObjects.length,
+    });
+  } catch (error) {
+    console.error('Similar objects API error:', error);
+
+    if (error instanceof Error && error.message.includes('not found')) {
+      res.status(404).json({
+        success: false,
+        error: 'Object not found',
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to find similar objects',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/clustering/duplicates/:id
+ *
+ * Detect potential duplicate objects
+ *
+ * Query params:
+ * - threshold: similarity threshold for duplicates (default 0.85)
+ */
+app.get('/api/clustering/duplicates/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { threshold } = req.query;
+
+    const decodedId = decodeURIComponent(id);
+
+    const duplicates = await detectDuplicates(
+      decodedId,
+      threshold ? parseFloat(threshold as string) : 0.85
+    );
+
+    res.status(200).json({
+      success: true,
+      objectId: decodedId,
+      data: duplicates,
+      count: duplicates.length,
+    });
+  } catch (error) {
+    console.error('Duplicate detection API error:', error);
+
+    if (error instanceof Error && error.message.includes('not found')) {
+      res.status(404).json({
+        success: false,
+        error: 'Object not found',
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to detect duplicates',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/clustering/query
+ *
+ * Find objects similar to a natural language query
+ *
+ * Query params:
+ * - q: search query (required)
+ * - limit: number of results (default 10, max 50)
+ * - threshold: minimum similarity score (default 0.4)
+ * - objectType: filter by type
+ * - repository: filter by repository
+ */
+app.get('/api/clustering/query', async (req: Request, res: Response) => {
+  try {
+    const { q, limit, threshold, objectType, repository } = req.query;
+
+    if (!q || typeof q !== 'string') {
+      res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: q',
+      });
+      return;
+    }
+
+    const results = await findObjectsByQuery(q, {
+      limit: limit ? Math.min(parseInt(limit as string), 50) : 10,
+      threshold: threshold ? parseFloat(threshold as string) : 0.4,
+      objectType: objectType as string,
+      repository: repository as string,
+    });
+
+    res.status(200).json({
+      success: true,
+      query: q,
+      data: results,
+      count: results.length,
+    });
+  } catch (error) {
+    console.error('Query clustering API error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to find similar objects',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/clustering/stats
+ *
+ * Get clustering statistics
+ *
+ * Query params:
+ * - repository: filter by repository (optional)
+ */
+app.get('/api/clustering/stats', async (req: Request, res: Response) => {
+  try {
+    const { repository } = req.query;
+
+    const stats = await getClusteringStats(repository as string | undefined);
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    console.error('Clustering stats API error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get clustering stats',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * POST /api/clustering/batch/run
+ *
+ * Run the batch clustering pipeline (k-means + topic labeling)
+ *
+ * Body:
+ * - k: number of clusters (optional, default 8)
+ */
+app.post('/api/clustering/batch/run', async (req: Request, res: Response) => {
+  try {
+    const { k } = req.body;
+
+    const clusterCount = k && typeof k === 'number' ? k : 8;
+
+    console.log(`Starting batch clustering pipeline with k=${clusterCount}`);
+
+    // Run pipeline in background
+    runClusteringPipeline(clusterCount).catch((error) => {
+      console.error('Background clustering pipeline failed:', error);
+    });
+
+    res.status(202).json({
+      success: true,
+      message: 'Clustering pipeline started',
+      k: clusterCount,
+    });
+  } catch (error) {
+    console.error('Clustering pipeline API error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to start clustering pipeline',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/clustering/batch/topics
+ *
+ * Get all cluster topics (labels)
+ */
+app.get('/api/clustering/batch/topics', async (req: Request, res: Response) => {
+  try {
+    const topics = await getAllClusterLabels();
+
+    res.status(200).json({
+      success: true,
+      topics,
+      count: topics.length,
+    });
+  } catch (error) {
+    console.error('Get topics API error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get topics',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/clustering/batch/topics/:id
+ *
+ * Get all objects in a specific cluster/topic
+ */
+app.get('/api/clustering/batch/topics/:id', async (req: Request, res: Response) => {
+  try {
+    const clusterId = parseInt(req.params.id);
+
+    if (isNaN(clusterId)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid cluster ID',
+      });
+      return;
+    }
+
+    const members = await getClusterMembers(clusterId);
+
+    // Get cluster metadata
+    const stats = await getClusterStats();
+    const cluster = stats.clusters.find((c) => c.clusterId === clusterId);
+
+    res.status(200).json({
+      success: true,
+      clusterId,
+      label: cluster?.label || null,
+      members,
+      count: members.length,
+    });
+  } catch (error) {
+    console.error('Get cluster members API error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get cluster members',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * POST /api/clustering/batch/topics/:id/relabel
+ *
+ * Regenerate topic label for a cluster
+ */
+app.post('/api/clustering/batch/topics/:id/relabel', async (req: Request, res: Response) => {
+  try {
+    const clusterId = parseInt(req.params.id);
+
+    if (isNaN(clusterId)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid cluster ID',
+      });
+      return;
+    }
+
+    const newLabel = await regenerateClusterLabel(clusterId);
+
+    res.status(200).json({
+      success: true,
+      clusterId,
+      label: newLabel,
+    });
+  } catch (error) {
+    console.error('Relabel cluster API error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to regenerate label',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /api/clustering/batch/stats
+ *
+ * Get batch clustering statistics
+ */
+app.get('/api/clustering/batch/stats', async (req: Request, res: Response) => {
+  try {
+    const stats = await getClusteringPipelineStats();
+
+    res.status(200).json({
+      success: true,
+      ...stats,
+    });
+  } catch (error) {
+    console.error('Clustering pipeline stats API error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get pipeline stats',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }

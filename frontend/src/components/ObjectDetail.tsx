@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Sparkles } from 'lucide-react';
 import { api } from '../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,12 +18,20 @@ export function ObjectDetail() {
   const [object, setObject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [similarObjects, setSimilarObjects] = useState<any[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadObject(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (object && id) {
+      loadSimilarObjects(id);
+    }
+  }, [object, id]);
 
   const loadObject = async (objectId: string) => {
     try {
@@ -36,6 +44,24 @@ export function ObjectDetail() {
       setError(err instanceof Error ? err.message : 'Failed to load object');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSimilarObjects = async (objectId: string) => {
+    try {
+      setLoadingSimilar(true);
+
+      const response = await api.findSimilarObjects(objectId, {
+        limit: 5,
+        threshold: 0.4,
+      });
+
+      setSimilarObjects(response.data);
+    } catch (err) {
+      console.error('Failed to load similar objects:', err);
+      // Don't show error for similar objects - it's optional
+    } finally {
+      setLoadingSimilar(false);
     }
   };
 
@@ -182,6 +208,58 @@ export function ObjectDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Similar Objects Section */}
+      {(loadingSimilar || similarObjects.length > 0) && (
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Similar Objects
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            {loadingSimilar ? (
+              <div className="text-center text-muted-foreground py-4">
+                Finding similar objects...
+              </div>
+            ) : similarObjects.length > 0 ? (
+              <div className="space-y-3">
+                {similarObjects.map((similar) => (
+                  <Link
+                    key={similar.objectId}
+                    to={`/object/${encodeURIComponent(similar.objectId)}`}
+                    className="block p-4 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className="text-xs">
+                            {similar.objectType}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            {Math.round(similar.similarityScore * 100)}% similar
+                          </Badge>
+                        </div>
+                        <h3 className="font-medium text-sm mb-1 line-clamp-2">
+                          {similar.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {similar.repository}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No similar objects found
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
