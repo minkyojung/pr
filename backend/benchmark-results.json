@@ -1,0 +1,553 @@
+{
+  "timestamp": "2025-11-22T02:25:50.166Z",
+  "totalQueries": 11,
+  "results": [
+    {
+      "query": "authentication",
+      "category": "Exact Keywords",
+      "description": "Single exact keyword",
+      "keyword": {
+        "count": 6,
+        "time": 7.994333000000097,
+        "topResults": [
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth (#25)",
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth",
+          "fix: Enable GitHub CLI authentication using OAuth token",
+          "fix: Use system browser for GitHub OAuth to support Passkey",
+          "feat: Configure local distribution setup for macOS (#23)"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 526.17875,
+        "topResults": [
+          "fix: Use system browser for GitHub OAuth to support Passkey",
+          "Merge branch 'fix-onboarding-and-oauth-errors'",
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth (#25)",
+          "Merge pull request #27 from minkyojung/fix-onboarding-and-oauth-errors",
+          "chore: Add production GitHub OAuth credentials to .env.production"
+        ],
+        "avgScore": 0.24662117650000007
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 447.03879200000006,
+        "topResults": [
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth (#25)",
+          "fix: Use system browser for GitHub OAuth to support Passkey",
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth",
+          "fix: Enable GitHub CLI authentication using OAuth token",
+          "chore: Add comprehensive logging to GitHub OAuth flow"
+        ],
+        "matchTypes": {
+          "keyword": 0,
+          "semantic": 14,
+          "hybrid": 6
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 5,
+        "keywordHybrid": 6,
+        "semanticHybrid": 19,
+        "allThree": 5
+      }
+    },
+    {
+      "query": "pull request",
+      "category": "Exact Keywords",
+      "description": "Multiple exact keywords",
+      "keyword": {
+        "count": 8,
+        "time": 4.741875000000164,
+        "topResults": [
+          "Merge pull request #29 from minkyojung/oauth-ui-commit-improvements",
+          "Merge pull request #28 from minkyojung/fix-onboarding-and-oauth-errors",
+          "Merge pull request #27 from minkyojung/fix-onboarding-and-oauth-errors",
+          "Merge pull request #26 from minkyojung/fix-conversation-context",
+          "Merge pull request #16 from minkyojung/task-execution-flow"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 320.5908330000002,
+        "topResults": [
+          "test",
+          "Merge pull request #13 from minkyojung/refactor/ts-ui-a11y",
+          "test 2",
+          "Merge pull request #29 from minkyojung/oauth-ui-commit-improvements",
+          "feat: Add fetch, pull, and independent push handlers"
+        ],
+        "avgScore": 0.410921129
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 778.2979589999995,
+        "topResults": [
+          "Merge pull request #29 from minkyojung/oauth-ui-commit-improvements",
+          "Merge pull request #28 from minkyojung/fix-onboarding-and-oauth-errors",
+          "Merge pull request #13 from minkyojung/refactor/ts-ui-a11y",
+          "Merge pull request #27 from minkyojung/fix-onboarding-and-oauth-errors",
+          "Merge pull request #15 from minkyojung/semarang"
+        ],
+        "matchTypes": {
+          "keyword": 0,
+          "semantic": 12,
+          "hybrid": 8
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 8,
+        "keywordHybrid": 8,
+        "semanticHybrid": 20,
+        "allThree": 8
+      }
+    },
+    {
+      "query": "bug fix",
+      "category": "Exact Keywords",
+      "description": "Common technical terms",
+      "keyword": {
+        "count": 16,
+        "time": 30.289749999999913,
+        "topResults": [
+          "fix: Critical bug fixes from Phase 3 refactoring",
+          "feat: Conversation deletion modal and UI improvements (#20)",
+          "feat: Attachment system with Arc-style UI and multimodal support",
+          "feat: implement task execution with auto/manual modes",
+          "feat: Configure local distribution setup for macOS (#23)"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 385.8502920000001,
+        "topResults": [
+          "fix: Remove setFileCursorPosition call after hook extraction (Step 5.4 bugfix)",
+          "fix: Critical bug fixes from Phase 3 refactoring",
+          "fix: show auto/manual buttons for both pending and active sessions",
+          "fix: Fix textarea height reset and slash commands path resolution",
+          "fix: use handleSend for task execution to properly update UI"
+        ],
+        "avgScore": 0.39265191600000005
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 353.2641249999997,
+        "topResults": [
+          "fix: Critical bug fixes from Phase 3 refactoring",
+          "fix: resolve Plan Mode todo display issues and enhance workspace features",
+          "fix: Enable real-time streaming for reasoning UI",
+          "feat(sidebar): Complete sidebar UX with workspace context tracking",
+          "fix: Fix dotenv path resolution for packaged app and bump to v0.0.3"
+        ],
+        "matchTypes": {
+          "keyword": 5,
+          "semantic": 8,
+          "hybrid": 7
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 3,
+        "keywordHybrid": 12,
+        "semanticHybrid": 11,
+        "allThree": 3
+      }
+    },
+    {
+      "query": "security vulnerabilities",
+      "category": "Conceptual",
+      "description": "Security-related concepts",
+      "keyword": {
+        "count": 3,
+        "time": 6.404207999999926,
+        "topResults": [
+          "feat: Configure local distribution setup for macOS (#23)",
+          "feat: implement task execution with auto/manual modes",
+          "Circuit Test-Fix Loop: AI-Powered Automated Testing (Phases 0-6)"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 311.73812499999985,
+        "topResults": [
+          "refactor: Improve code quality and security",
+          "feat: Add Claude Code Integration & Security Hardening",
+          "feat: Production-ready Octave with onboarding and security hardening (#21)",
+          "fix: Use system browser for GitHub OAuth to support Passkey",
+          "feat: Production-ready Octave with onboarding and security hardening"
+        ],
+        "avgScore": 0.23919180600000006
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 505.69887500000004,
+        "topResults": [
+          "feat: Configure local distribution setup for macOS (#23)",
+          "refactor: Improve code quality and security",
+          "feat: implement task execution with auto/manual modes",
+          "feat: Add Claude Code Integration & Security Hardening",
+          "Circuit Test-Fix Loop: AI-Powered Automated Testing (Phases 0-6)"
+        ],
+        "matchTypes": {
+          "keyword": 2,
+          "semantic": 17,
+          "hybrid": 1
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 1,
+        "keywordHybrid": 3,
+        "semanticHybrid": 18,
+        "allThree": 1
+      }
+    },
+    {
+      "query": "UI improvements",
+      "category": "Conceptual",
+      "description": "User interface enhancements",
+      "keyword": {
+        "count": 20,
+        "time": 30.57245899999907,
+        "topResults": [
+          "feat: Improve timeout handling and UI readability",
+          "feat: Conversation deletion modal and UI improvements (#20)",
+          "feat: Improve Smart Commit UI with filtering and better layout",
+          "feat: redesign reasoning UI and reorganize workspace controls",
+          "feat: Enhance reasoning UI with improved styling and code previews"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 599.152583000001,
+        "topResults": [
+          "feat(ui): Enhanced workspace UI with Apple HIG design improvements",
+          "refactor(ui): Apply minimal design system to settings components",
+          "refactor(settings): Remove unnecessary UI elements for cleaner interface",
+          "refactor(settings): Simplify AI rules UI with minimal design",
+          "UI System Improvements: Color System Standardization & Legacy Code Cleanup"
+        ],
+        "avgScore": 0.4931485404999999
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 662.8082090000007,
+        "topResults": [
+          "feat(ui): Enhanced workspace UI with Apple HIG design improvements",
+          "feat: Enhance reasoning UI with improved styling and code previews",
+          "feat: redesign reasoning UI and reorganize workspace controls",
+          "feat: Improve timeout handling and UI readability",
+          "feat: redesign reasoning UI and reorganize workspace controls (#17)"
+        ],
+        "matchTypes": {
+          "keyword": 2,
+          "semantic": 3,
+          "hybrid": 15
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 9,
+        "keywordHybrid": 14,
+        "semanticHybrid": 14,
+        "allThree": 9
+      }
+    },
+    {
+      "query": "performance optimization",
+      "category": "Conceptual",
+      "description": "Performance-related work",
+      "keyword": {
+        "count": 8,
+        "time": 30.17741600000045,
+        "topResults": [
+          "feat: Conversation deletion modal and UI improvements (#20)",
+          "feat(sidebar): Complete sidebar UX with workspace context tracking",
+          "feat: Circuit v0.3.0 - Multi-conversation, Terminal, Git Graph, and Voice Integration",
+          "feat: implement task execution with auto/manual modes",
+          "feat: Workspace-chat synchronization with persistent storage"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 402.44737499999974,
+        "topResults": [
+          "feat: Multi-conversation system with SharedMemoryPool optimization (#18)",
+          "feat: Enhance reasoning UI with improved styling and code previews",
+          "feat: Improve timeout handling and UI readability",
+          "refactor(settings): Simplify AI rules UI with minimal design",
+          "refactor(ui): Apply minimal design system to settings components"
+        ],
+        "avgScore": 0.2525234865
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 561.6079579999987,
+        "topResults": [
+          "feat: Multi-conversation system with SharedMemoryPool optimization (#18)",
+          "feat: Conversation deletion modal and UI improvements (#20)",
+          "feat(sidebar): Complete sidebar UX with workspace context tracking",
+          "feat: implement task execution with auto/manual modes",
+          "feat: Multi-conversation system with SharedMemoryPool optimization"
+        ],
+        "matchTypes": {
+          "keyword": 3,
+          "semantic": 12,
+          "hybrid": 5
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 3,
+        "keywordHybrid": 8,
+        "semanticHybrid": 15,
+        "allThree": 3
+      }
+    },
+    {
+      "query": "refactoring code for better maintainability",
+      "category": "Natural Language",
+      "description": "Natural language description",
+      "keyword": {
+        "count": 7,
+        "time": 25.04229200000009,
+        "topResults": [
+          "feat: Circuit v0.3.0 - Multi-conversation, Terminal, Git Graph, and Voice Integration (#19)",
+          "feat: Conversation deletion modal and UI improvements (#20)",
+          "feat(sidebar): Complete sidebar UX with workspace context tracking",
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth (#25)",
+          "refactor: Extract keyboard shortcuts to useAppKeyboardShortcuts hook (Phase 5, Step 5.1)"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 506.38091600000007,
+        "topResults": [
+          "refactor: Improve code quality and security",
+          "refactor: Separate ChatPanel into its own file (Phase 6, Step 6.2)",
+          "refactor: clean up debug logs and fix React hook dependencies",
+          "refactor: Extract hooks from AppSidebar (Phase 4)",
+          "refactor: Remove unused code and legacy files"
+        ],
+        "avgScore": 0.4241779555
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 386.4993749999994,
+        "topResults": [
+          "refactor: Extract conversation management to useConversationManagement hook (Phase 5, Step 5.2)",
+          "feat: redesign reasoning UI and reorganize workspace controls (#17)",
+          "refactor: Extract keyboard shortcuts to useAppKeyboardShortcuts hook (Phase 5, Step 5.1)",
+          "feat: Conversation deletion modal and UI improvements (#20)",
+          "feat: Circuit v0.3.0 - Multi-conversation, Terminal, Git Graph, and Voice Integration (#19)"
+        ],
+        "matchTypes": {
+          "keyword": 3,
+          "semantic": 13,
+          "hybrid": 4
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 1,
+        "keywordHybrid": 7,
+        "semanticHybrid": 14,
+        "allThree": 1
+      }
+    },
+    {
+      "query": "fixing errors in login flow",
+      "category": "Natural Language",
+      "description": "Problem description",
+      "keyword": {
+        "count": 2,
+        "time": 5.698541000001569,
+        "topResults": [
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth (#25)",
+          "fix: Enable GitHub CLI authentication using OAuth token"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 544.5362910000003,
+        "topResults": [
+          "Merge pull request #27 from minkyojung/fix-onboarding-and-oauth-errors",
+          "fix: Enable GitHub CLI authentication using OAuth token",
+          "Merge pull request #28 from minkyojung/fix-onboarding-and-oauth-errors",
+          "Merge branch 'fix-onboarding-and-oauth-errors'",
+          "fix: Prevent onboarding reset when upgrading from v0.0.4"
+        ],
+        "avgScore": 0.3481130385
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 296.43429200000173,
+        "topResults": [
+          "fix: Enable GitHub CLI authentication using OAuth token",
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth (#25)",
+          "Merge pull request #27 from minkyojung/fix-onboarding-and-oauth-errors",
+          "Merge pull request #28 from minkyojung/fix-onboarding-and-oauth-errors",
+          "Merge branch 'fix-onboarding-and-oauth-errors'"
+        ],
+        "matchTypes": {
+          "keyword": 0,
+          "semantic": 18,
+          "hybrid": 2
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 2,
+        "keywordHybrid": 2,
+        "semanticHybrid": 20,
+        "allThree": 2
+      }
+    },
+    {
+      "query": "adding dark mode support",
+      "category": "Natural Language",
+      "description": "Feature description",
+      "keyword": {
+        "count": 1,
+        "time": 17.954000000001543,
+        "topResults": [
+          "feat: Circuit v0.3.0 - Multi-conversation, Terminal, Git Graph, and Voice Integration (#19)"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 707.8719579999997,
+        "topResults": [
+          "refactor(theme): Simplify theme system and fix initialization issues",
+          "refactor: Change user message background to neutral grayscale",
+          "UI System Improvements: Color System Standardization & Legacy Code Cleanup",
+          "style: Replace brand colors with grayscale palette",
+          "refactor(ui): Apply minimal design system to settings components"
+        ],
+        "avgScore": 0.3769612479999999
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 937.9694159999999,
+        "topResults": [
+          "feat: Circuit v0.3.0 - Multi-conversation, Terminal, Git Graph, and Voice Integration (#19)",
+          "refactor(theme): Simplify theme system and fix initialization issues",
+          "refactor: Change user message background to neutral grayscale",
+          "UI System Improvements: Color System Standardization & Legacy Code Cleanup",
+          "style: Replace brand colors with grayscale palette"
+        ],
+        "matchTypes": {
+          "keyword": 0,
+          "semantic": 19,
+          "hybrid": 1
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 1,
+        "keywordHybrid": 1,
+        "semanticHybrid": 20,
+        "allThree": 1
+      }
+    },
+    {
+      "query": "GitHub API rate limiting",
+      "category": "Mixed",
+      "description": "Platform-specific technical issue",
+      "keyword": {
+        "count": 0,
+        "time": 2.75183399999878,
+        "topResults": []
+      },
+      "semantic": {
+        "count": 20,
+        "time": 419.62016700000095,
+        "topResults": [
+          "feat: Improve timeout handling and UI readability",
+          "refactor: Improve code quality and security",
+          "chore: Add comprehensive logging to GitHub OAuth flow",
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth (#25)",
+          "feat: Add Claude Code Integration & Security Hardening"
+        ],
+        "avgScore": 0.20795861450000003
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 786.2361249999994,
+        "topResults": [
+          "feat: Improve timeout handling and UI readability",
+          "refactor: Improve code quality and security",
+          "chore: Add comprehensive logging to GitHub OAuth flow",
+          "fix: Enable conversation context, bypass permissions, and OAuth-based gh auth (#25)",
+          "feat: Add Claude Code Integration & Security Hardening"
+        ],
+        "matchTypes": {
+          "keyword": 0,
+          "semantic": 20,
+          "hybrid": 0
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 0,
+        "keywordHybrid": 0,
+        "semanticHybrid": 20,
+        "allThree": 0
+      }
+    },
+    {
+      "query": "React component testing",
+      "category": "Mixed",
+      "description": "Technology-specific task",
+      "keyword": {
+        "count": 6,
+        "time": 33.66908300000068,
+        "topResults": [
+          "feat: Multi-conversation system with SharedMemoryPool optimization (#18)",
+          "feat: Circuit v0.3.0 - Multi-conversation, Terminal, Git Graph, and Voice Integration (#19)",
+          "feat: Add VSCode Material Icon Theme for file type icons",
+          "Circuit Test-Fix Loop: AI-Powered Automated Testing (Phases 0-6)",
+          "feat: Conversation deletion modal and UI improvements (#20)"
+        ]
+      },
+      "semantic": {
+        "count": 20,
+        "time": 498.8064999999988,
+        "topResults": [
+          "refactor: Extract render functions to panel components (Phase 5, Step 5.3)",
+          "refactor: clean up debug logs and fix React hook dependencies",
+          "fix: Critical bug fixes from Phase 3 refactoring",
+          "refactor(phase-7): Extract ChatInputControls component from ChatInput.tsx",
+          "refactor: Separate ChatPanel into its own file (Phase 6, Step 6.2)"
+        ],
+        "avgScore": 0.33961326449999996
+      },
+      "hybrid": {
+        "count": 20,
+        "time": 434.78037499999846,
+        "topResults": [
+          "feat: Circuit v0.3.0 - Multi-conversation, Terminal, Git Graph, and Voice Integration (#19)",
+          "Circuit Test-Fix Loop: AI-Powered Automated Testing (Phases 0-6)",
+          "feat: Multi-conversation system with SharedMemoryPool optimization (#18)",
+          "refactor: Extract render functions to panel components (Phase 5, Step 5.3)",
+          "refactor: clean up debug logs and fix React hook dependencies"
+        ],
+        "matchTypes": {
+          "keyword": 4,
+          "semantic": 14,
+          "hybrid": 2
+        }
+      },
+      "overlap": {
+        "keywordSemantic": 2,
+        "keywordHybrid": 6,
+        "semanticHybrid": 16,
+        "allThree": 2
+      }
+    }
+  ],
+  "summary": {
+    "avgResponseTime": {
+      "keyword": 17.754162818182024,
+      "semantic": 474.833980909091,
+      "hybrid": 559.1486819090907
+    },
+    "avgResultCount": {
+      "keyword": 7,
+      "semantic": 20,
+      "hybrid": 20
+    }
+  }
+}
